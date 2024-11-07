@@ -2,113 +2,50 @@ import cv2
 import mediapipe as mp
 import pyautogui
 import serial
-import time
-import math
+import hand_tracking_mouse_controller as hand_controller
+import drawing as drawing_handler
 
-ser = serial.Serial('COM3', 9600)
+ser = serial.Serial('COM3', 9600)  # Serial communication setup
+hand_detector = mp.solutions.hands.Hands()
+screen_w, screen_h = pyautogui.size()  # Get screen dimensions
 
-hand_detector=mp.solutions.hands.Hands()
-drawing_utils = mp.solutions.drawing_utils
-screen_w, screen_h= pyautogui.size()
-face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
-class vm():    
+class HardwareController:    
     def __init__(self):
-        self.video=cv2.VideoCapture(1)
+        self.video = cv2.VideoCapture(1)
+
     def __del__(self):
         self.video.release()
-    def virtual_mouse(self):       
+
+    def signal(self):       
         _, frame = self.video.read()
         frame = cv2.flip(frame, 1)
-        frame_h , frame_w, _ = frame.shape
+        frame_h, frame_w, _ = frame.shape
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
         output = hand_detector.process(rgb_frame)
         hands = output.multi_hand_landmarks
-        index_y = 0
-
-        # Initialize click count
-        click_count = 0
 
         if hands:
-                try: 
-                                data_to_send = '0'  
-                                ser.write(data_to_send.encode())
-                except KeyboardInterrupt:
-                            print("Exiting...")
-                            ser.close()
-            
-                       
+            try: 
+                data_to_send = '0'  # Serial communication for hand detection
+                ser.write(data_to_send.encode())
+            except KeyboardInterrupt:
+                print("Exiting...")
+                ser.close()
         else:
-                try: 
-                                data_to_send = '1'  
-                                ser.write(data_to_send.encode())
-                except KeyboardInterrupt:
-                            print("Exiting...")
-                            ser.close()
-                
+            try: 
+                data_to_send = '1'  # Serial communication for no hand detection
+                ser.write(data_to_send.encode())
+            except KeyboardInterrupt:
+                print("Exiting...")
+                ser.close()
 
-        _,jpg=cv2.imencode('.jpg',frame)
+        _, jpg = cv2.imencode('.jpg', frame)
         return jpg.tobytes()
-class vm2():
-    def __init__(self):
-        self.video=cv2.VideoCapture(1)
-    def __del__(self):
-        self.video.release()
-    def virtual_mouse2(self):       
-        _, frame2 = self.video.read()
-        frame2 = cv2.flip(frame2, 1)
-        rgb_frame = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB)
-        output2 = face_mesh.process(rgb_frame)
-        landmark_points = output2.multi_face_landmarks
-        frame_h2, frame_w2, _ = frame2.shape
-        if landmark_points:
-            landmarks = landmark_points[0].landmark
-            for id, landmark in enumerate(landmarks[474:478]):
-                x = int(landmark.x * frame_w2)
-                y = int(landmark.y * frame_h2)
-                cv2.circle(frame2, (x, y), 3, (0, 255, 0))
-                if id == 1:
-                    screen_x = screen_w * landmark.x
-                    screen_y = screen_h * landmark.y
-                    # pyautogui.moveTo(screen_x, screen_y)
-            left = [landmarks[145], landmarks[159]]
-            for landmark in left:
-                x = int(landmark.x * frame_w2)
-                y = int(landmark.y * frame_h2)
-                cv2.circle(frame2, (x, y), 3, (0, 255, 255))
-                print(left[0].y - left[1].y)
-            if (left[0].y - left[1].y) < 0.010:
-                # pyautogui.click(clicks=2)
-                try: 
-                        data_to_send = '0'  
-                        ser.write(data_to_send.encode())
-                except KeyboardInterrupt:
-                    print("Exiting...")
-                    ser.close()
-            # else: 
-            #     try: 
-            #             data_to_send = '1'  
-            #             ser.write(data_to_send.encode())
-            #     except KeyboardInterrupt:
-            #             print("Exiting...")
-            #             ser.close()
 
-        _,jpg2=cv2.imencode('.jpg',frame2)
-        return jpg2.tobytes()
-    
-    
+class HandMouseController:
+    def virtual_mouse():
+        hand_controller.main()  # Calls the hand tracking module's main function
 
-
-
-
-
-
-
-
-
-
-
-
-
-  
-    
+class DrawingController:
+    def get_drawing_frame():
+        return drawing_handler.get_frame()
