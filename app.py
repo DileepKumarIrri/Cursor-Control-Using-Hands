@@ -28,11 +28,11 @@ def generate_drawing_stream(controller):
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
 @app.route("/hardware")
-def hand_mouse_stream():
+def hardware_stream():
     return Response(generate_hardware_control_stream(hardware_controller), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route("/hand_mouse")
-def face_mouse_stream():
+def hand_mouse_stream():
     return Response(generate_hand_mouse_stream(hand_mouse_controller), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route("/drawing")
